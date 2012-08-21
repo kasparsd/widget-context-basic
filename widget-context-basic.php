@@ -23,8 +23,7 @@ class widget_context_basic {
 		add_action( 'save_post',                         array( $this, 'save_related_widgets' ) );
 		add_action( 'wp_ajax_get_widget_titles',         array( $this, 'ajax_get_widget_titles' ) );
 		add_action( 'admin_init',                        array( $this, 'add_custom_related_widgets' ) );
-		add_action( 'admin_print_styles-edit-tags.php',  array( $this, 'add_admin_scripts' ) );
-		add_action( 'admin_print_styles-post.php',  array( $this, 'add_admin_scripts' ) );
+		add_action( 'admin_enqueue_scripts',             array( $this, 'add_admin_scripts' ) );
 		add_action( 'edit_term',                         array( $this, 'save_term_related_widgets' ), 10, 3 );
 		add_action( 'delete_term',                       array( $this, 'delete_term_related_widgets' ), 10, 3 );
 		add_filter( 'plugins_url',                       array( $this, 'plugins_symlink_fix' ), 10, 3 );
@@ -37,7 +36,10 @@ class widget_context_basic {
 		return $url;
 	}
 
-	function add_admin_scripts() {
+	function add_admin_scripts( $location ) {
+		if ( ! in_array( $location, array( 'new-post.php', 'post.php', 'edit-tags.php' ) ) )
+			return;
+
 		wp_enqueue_script( 'widget-context-basic-admin-js', plugins_url( '/js/widget-context-basic.js', __FILE__ ), array( 'jquery', 'jquery-ui-sortable' ) );
 		wp_enqueue_style( 'widget-context-basic-admin-css', plugins_url( '/js/widget-context-basic.css', __FILE__ ) );
 	}
@@ -53,7 +55,7 @@ class widget_context_basic {
 		?>
 		<tr class="form-field">
 			<th scope="row" valign="top">
-				<label for="related_widgets"><?php _e('Widgets Control'); ?></label>
+				<label for="related_widgets"><?php _e('Widgets Settings'); ?></label>
 			</th>
 			<td>
 				<?php $this->post_type_related_widgets( 'related_widgets_tax_'. $taxonomy . '_' . $tag->term_id ); ?>
@@ -152,6 +154,7 @@ class widget_context_basic {
 			$this->options = get_option( $post );
 
 		$sidebar_options = array();
+		$all_widgets = wp_get_sidebars_widgets();
 
 		foreach ( $wp_registered_sidebars as $sidebar_id => $sidebar ) {
 			if ( ! isset( $sidebar['enable_related_widgets'] ) )
@@ -161,6 +164,9 @@ class widget_context_basic {
 				$related_enabled = ' checked="checked" ';
 			else
 				$related_enabled = '';
+
+			if ( ! isset( $all_widgets[ $sidebar_id ] ) || empty( $all_widgets[ $sidebar_id ] ) )
+				continue;
 
 			$sidebar_options[] = sprintf( 
 					'<div class="related-widgets-sidebar" id="rs-sidebar-%1$s">
