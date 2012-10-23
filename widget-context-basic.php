@@ -1,13 +1,13 @@
 <?php
 /*
- Plugin Name: Widget Context (Basic)
- Plugin URI: http://konstruktors.com
- Description: Show or hide widgets on specific sections of your site
- Version: 0.4
- Author: Kaspars Dambis
- Author URI: http://konstruktors.com
- Text Domain: wivi
- */
+Plugin Name: Widget Context (Basic)
+Plugin URI: http://konstruktors.com
+Description: Show or hide widgets on specific sections of your site
+Version: 0.4.2
+Author: Kaspars Dambis
+Author URI: http://konstruktors.com
+Text Domain: wivi
+*/
 
 new widget_context_basic();
 
@@ -37,7 +37,7 @@ class widget_context_basic {
 	}
 
 	function add_admin_scripts( $location ) {
-		if ( ! in_array( $location, array( 'new-post.php', 'post.php', 'edit-tags.php' ) ) )
+		if ( ! in_array( $location, array( 'new-post.php', 'post.php', 'edit-tags.php', 'post-new.php' ) ) )
 			return;
 
 		wp_enqueue_script( 'widget-context-basic-admin-js', plugins_url( '/js/widget-context-basic.js', __FILE__ ), array( 'jquery', 'jquery-ui-sortable' ) );
