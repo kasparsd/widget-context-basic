@@ -17,7 +17,7 @@
 .related_widgets li { margin:0; padding:0.3em 8px; border-top:1px solid #ddd; cursor:move; }
 .related_widgets li:first-child { border:none; }
 .related_widgets strong { font-weight:normal; }
-.related_widgets .widget-hide { float:right; margin-left:1em; }
+.related_widgets .widget-hide, .related_widgets .widget-show { float:right; margin-left:1em; }
 .related_widgets .do-hide { color:#999; }
 .related-widgets-sidebar .replace-widget-area { margin:8px 0; float:right; width:100%; clear:both; }
 .related-widgets-sidebar .replace-widget-area strong { display:block; margin-bottom:5px; }
