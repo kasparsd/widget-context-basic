@@ -172,7 +172,9 @@ class widget_context_basic {
 					'<div class="related-widgets-sidebar" id="rs-sidebar-%1$s">
 						<hgroup>
 							<h4>%2$s</h4>
-							<label class="related-widgets-enable"><input type="checkbox" name="related_widgets[sidebars][%1$s][enabled]" value="1" %4$s rel="rs-sidebar-%1$s" /> %3$s</label>
+							<label class="related-widgets-enable">
+								<input type="checkbox" name="related_widgets[sidebars][%1$s][enabled]" value="1" %4$s rel="rs-sidebar-%1$s" /> %3$s
+							</label>
 							<span class="toggle" rel="rs-sidebar-%1$s"></span>
 						</hgroup>
 						<div class="related-widgets-config">
@@ -219,30 +221,42 @@ class widget_context_basic {
 		$widget_list = array();
 
 		if ( ! empty( $this->options ) && isset( $this->options['sidebars'][ $sidebar_id ]['enabled'] ) )
-			$all_widgets[ $sidebar_id ] = array_intersect_key( $this->options['sidebars'][ $sidebar_id ]['widgets'], $all_widgets[ $sidebar_id ] ) 
-											+ array_diff_key( $this->options['sidebars'][ $sidebar_id ]['widgets'], $all_widgets[ $sidebar_id ] );
+			$all_widgets[ $sidebar_id ] = array_intersect_key( $this->options['sidebars'][ $sidebar_id ]['widget_order'], $all_widgets[ $sidebar_id ] ) 
+											+ array_diff_key( $this->options['sidebars'][ $sidebar_id ]['widget_order'], $all_widgets[ $sidebar_id ] );
 
 		foreach ( $all_widgets[ $sidebar_id ] as $widget_id ) {
 			$widget_dropdown[] = sprintf( '<option value="%s">%s</option>', $widget_id, $widget_id );
 
-			$hidden_enabled = '';
+			$is_hidden = false;
 
 			if ( ! empty( $this->options ) && isset( $this->options['sidebars'][ $sidebar_id ]['hidden'] ) && isset( $this->options['sidebars'][ $sidebar_id ]['enabled'] ) )
 				if ( in_array( $widget_id, $this->options['sidebars'][ $sidebar_id ]['hidden'] ) )
-					$hidden_enabled = ' checked="checked" ';
-			
+					$is_hidden = true;
+
 			$widget_list[] = sprintf( 
-								'<li class="widget-%1$s">
-									<strong>%3$s</strong><span class="in-title"></span>
-									<input type="hidden" name="related_widgets[sidebars][%2$s][widgets][]" value="%1$s" />
-									<label class="widget-hide"><input type="checkbox" name="related_widgets[sidebars][%2$s][hidden][]" value="%1$s" %5$s /> %4$s</label>
-								</li>',
-								$widget_id,
-								$sidebar_id,
-								$wp_registered_widgets[ $widget_id ]['name'], 
-								__( 'Hide' ),
-								$hidden_enabled
-							);
+					'<li class="widget-%1$s">
+						<span class="widget-title">
+							<strong>%3$s</strong>
+							<span class="in-title"></span>
+						</span>
+						<input type="hidden" name="related_widgets[sidebars][%2$s][widget_order][]" value="%1$s" />
+						<label class="widget-show">
+							<input type="radio" name="related_widgets[sidebars][%2$s][widgets][%1$s][hidden]" value="" %4$s /> 
+							%5$s
+						</label>
+						<label class="widget-hide">
+							<input type="radio" name="related_widgets[sidebars][%2$s][widgets][%1$s][hidden]" value="1" %6$s /> 
+							%7$s
+						</label>								
+					</li>',
+					$widget_id,
+					$sidebar_id,
+					esc_html( $wp_registered_widgets[ $widget_id ]['name'] ), 
+					checked( $is_hidden, false, false ),
+					__( 'Show' ),
+					checked( $is_hidden, true, false ),
+					__( 'Hide' )
+				);
 		}
 
 
