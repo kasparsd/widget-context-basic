@@ -18,21 +18,15 @@ jQuery(window).ready(function($) {
 					$('.widget-' + $('input.widget-id', this).val() + ' .in-title', $widgets_sidebar).text( ': ' + $widget_title );
 			});
 		});
-		
-		$(this).addClass('collapsed');
-		$('.related-widgets-config', this).hide();
-		
-		$('.toggle, h4', this).click(function() {
-			$('.related-widgets-config', $widgets_sidebar).slideToggle('fast');
-			$($widgets_sidebar).toggleClass('collapsed');
+	});
 
-			$($widgets_sidebar).siblings('.related-widgets-sidebar').each(function() {
-				if ( ! $(this).hasClass('collapsed') ) {
-					$(this).addClass('collapsed');
-					$('.related-widgets-config', this).slideToggle('fast');
-				}
-			});
-		});
+	$('#tab-widgets-new .widget').each(function() {
+		$('.widget-control-actions', this).prepend('<input type="button" class="button button-primary right add-widget-new" value="Add" />');
+	});
+
+	$('#tab-widgets-available .widget').each(function() {
+		$('input, textarea, select', this).attr('disabled', 'disabled');
+		$('.widget-control-actions', this).prepend('<input rel="'+ $('.widget-id', this).val() +'" type="button" class="button button-primary right add-widget-new" value="Add" />');
 	});
 
 	$('.related-widgets-options .replace-widget-area select').change(function() {
@@ -48,7 +42,20 @@ jQuery(window).ready(function($) {
 	// Add sortables to widgets inside sidebars
 	$('.related-widgets-sidebar .related_widgets').sortable({
 		axis: 'y',
-		distance: 15,
-		placeholder: 'sortable-placeholder'
+		distance: 15
+	});
+
+	$('.related-widgets-picker').tabs();
+
+	$('.button-add-widget').on( 'click', function() {
+		$('.widget-settings').toggleClass('picker-active');	
+		/* $('.related-widgets-picker').tabs( 'select', 0 ); */
+
+		return false;
+	});
+
+	$('#picker-back').on( 'click', function() {
+		$('.widget-settings').toggleClass('picker-active');
+		return false;
 	});
 });

@@ -40,8 +40,16 @@ class widget_context_basic {
 		if ( ! in_array( $location, array( 'new-post.php', 'post.php', 'edit-tags.php', 'post-new.php' ) ) )
 			return;
 
-		wp_enqueue_script( 'widget-context-basic-admin-js', plugins_url( '/js/widget-context-basic.js', __FILE__ ), array( 'jquery', 'jquery-ui-sortable' ) );
-		wp_enqueue_style( 'widget-context-basic-admin-css', plugins_url( '/js/widget-context-basic.css', __FILE__ ) );
+		wp_enqueue_script( 
+			'widget-context-basic-admin-js', 
+			plugins_url( '/js/widget-context-basic.js', __FILE__ ), 
+			array( 'jquery', 'jquery-ui-sortable', 'admin-widgets', 'jquery-ui-tabs' ) 
+		);
+
+		wp_enqueue_style( 
+			'widget-context-basic-admin-css', 
+			plugins_url( '/js/widget-context-basic.css', __FILE__ ) 
+		);
 	}
 
 	function add_custom_related_widgets() {
@@ -146,6 +154,9 @@ class widget_context_basic {
 
 	function post_type_related_widgets( $post ) {
 		global $wp_registered_sidebars;
+
+		// We need the Widget API
+		require_once( ABSPATH . 'wp-admin/includes/widgets.php' );
 		
 		// We are on post edit screen
 		if ( is_object( $post ) )
@@ -170,21 +181,19 @@ class widget_context_basic {
 
 			$sidebar_options[] = sprintf( 
 					'<div class="related-widgets-sidebar" id="rs-sidebar-%1$s">
-						<hgroup>
+						<div class="related-widgets-header">
 							<h4>%2$s</h4>
-							<label class="related-widgets-enable">
-								<input type="checkbox" name="related_widgets[sidebars][%1$s][enabled]" value="1" %4$s rel="rs-sidebar-%1$s" /> %3$s
-							</label>
-							<span class="toggle" rel="rs-sidebar-%1$s"></span>
-						</hgroup>
-						<div class="related-widgets-config">
-							%5$s
 						</div>
+						<div class="related-widgets-config">
+							%4$s
+						</div>
+						<p class="related-widgets-tools">
+							<a href="#related-widget-picker" rel="%1$s" class="button button-add-widget">%3$s</a>
+						</p>
 					</div>', 
 					$sidebar_id, 
 					$sidebar['name'],
-					__( 'Enable' ),
-					$related_enabled,
+					__( 'Add Widget' ),
 					$this->show_related_widgets_for_sidebar( $sidebar_id, $post )
 				);
 		}
@@ -195,13 +204,67 @@ class widget_context_basic {
 		}
 
 		printf( 
-				'<div class="related-widgets-options">
-					%s
-					<p class="edit-widgets-link">%s</p>
+				'<div class="widget-settings">
+					<div class="related-widgets-list" id="related-widgets-list">
+						<div class="related-widgets-column">
+							%s
+						</div>
+					</div>
+					<div class="related-widgets-picker" id="related-widgets-picker">
+						<div class="related-widgets-column">
+							<div class="picker-header">
+								<a href="#back" id="picker-back">&laquo; Back</a>
+								<ul class="picker-tab-nav">
+									<li><a href="#tab-widgets-new">New Widget</a></li>
+									<li><a href="#tab-widgets-available">Existing Widgets</a></li>
+									<li><a href="#tab-widgets-stacks">Widget Stacks</a></li>
+								</ul>
+							</div>
+							<div class="picker-tab" id="tab-widgets-new">
+								<div class="picker-tab-wrap">
+									%s
+								</div>
+							</div>
+							<div class="picker-tab" id="tab-widgets-available">
+								<div class="picker-tab-wrap">
+									%s
+								</div>
+							</div>
+							<div class="picker-tab" id="tab-widgets-stacks">
+								3
+							</div>
+						</div>
+					</div>
 				</div>', 
 				implode( '', $sidebar_options ),
-				sprintf( '<a href="%s">%s</a>', admin_url( 'widgets.php' ), __('Manage Widgets') )
+				$this->get_widget_list(),
+				$this->get_all_sidebar_widgets()
 			);
+	}
+
+	function get_widget_list() {
+		// WordPress uses echo, so we need to create a wrapper function that returns that content instead
+		ob_start();
+			wp_list_widgets();
+			$widget_list = ob_get_contents();
+		ob_end_clean();
+		
+		return $widget_list;
+	}
+
+	function get_all_sidebar_widgets() {
+		global $wp_registered_sidebars;
+
+		// This is needed to render the widget controls for a quick preview
+		add_filter( 'dynamic_sidebar_params', 'wp_list_widget_controls_dynamic_sidebar' );
+
+		ob_start();
+		foreach ( $wp_registered_sidebars as $sidebar => $registered_sidebar )
+			dynamic_sidebar( $sidebar );
+		$widget_list = ob_get_contents();
+		ob_end_clean();
+
+		return $widget_list;
 	}
 
 	function show_related_widgets_for_sidebar( $sidebar_id, $post ) {
@@ -240,22 +303,16 @@ class widget_context_basic {
 							<span class="in-title"></span>
 						</span>
 						<input type="hidden" name="related_widgets[sidebars][%2$s][widget_order][]" value="%1$s" />
-						<label class="widget-show">
-							<input type="radio" name="related_widgets[sidebars][%2$s][widgets][%1$s][hidden]" value="" %4$s /> 
-							%5$s
-						</label>
-						<label class="widget-hide">
-							<input type="radio" name="related_widgets[sidebars][%2$s][widgets][%1$s][hidden]" value="1" %6$s /> 
-							%7$s
-						</label>								
+						<p class="widget-actions">
+							<a href="#widget-edit" rel="%1$s">%4$s</a>
+							<a href="#widget-remove" rel="%1$s">%5$s</a>
+						</p>					
 					</li>',
 					$widget_id,
 					$sidebar_id,
-					esc_html( $wp_registered_widgets[ $widget_id ]['name'] ), 
-					checked( $is_hidden, false, false ),
-					__( 'Show' ),
-					checked( $is_hidden, true, false ),
-					__( 'Hide' )
+					esc_html( $wp_registered_widgets[ $widget_id ]['name'] ),
+					__('Edit'),
+					__('Remove')
 				);
 		}
 
@@ -281,32 +338,24 @@ class widget_context_basic {
 				$sidebar_dropdowns[ $sid ] = $sidebar_dropdown[ $sid ][ 0 ];
 
 		return sprintf( 
-					'<!--<p class="add-widget">
-						<select class="related_widgets">%s</select> 
-						<input type="button" class="button" value="%s" />
-					</p>-->
-					<ul class="related_widgets">
+					'<ul class="related_widgets">
 						%s
 					</ul>
-					<p class="replace-widget-area">
-						<label>
-							<strong>%s</strong> 
-							<select name="related_widgets[sidebars][%s][replace]" rel="rs-sidebar-%5$s">%s</select>
-						</label>
-					</p>
-					',
-					implode( '', $widget_dropdown ),
-					__( 'Add' ),
+					<!-- <p class="add-widget">
+						<select class="related_widgets">%s</select> 
+						<input type="button" class="button" value="%s" />
+					</p> -->',
 					implode( '', $widget_list ),
-					__( 'Replace widget area with:' ),
-					$sidebar_id,
-					implode( '', $sidebar_dropdowns )
+					implode( '', $widget_dropdown ),
+					__( 'Add' )
 				);
 	}
 
 
 	// There is no clean way for retrieving widget titles, because
 	// they are generated on the fly (think echo instead of return).
+	// TODO: Move this to Javascript as we area already printing this
+	// info in the existing widget list
 	function ajax_get_widget_titles() {
 		/** WordPress Administration Widgets API */
 		require_once( ABSPATH . 'wp-admin/includes/widgets.php' );
