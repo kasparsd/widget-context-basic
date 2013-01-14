@@ -35,18 +35,6 @@ jQuery(window).ready(function($) {
 		});
 	});
 
-	// Enable fancy show/hide which dims the widget title
-	$('.related-widgets-options .related_widgets li').each(function() {
-		var $widget_element = this;
-
-		if ( $('.widget-hide input', this).is(':checked') )
-			$(this).addClass('do-hide');
-
-		$('.widget-hide input', this).click(function() {
-			$($widget_element).toggleClass('do-hide');
-		});
-	});
-
 	$('.related-widgets-options .replace-widget-area select').change(function() {
 		if ( $(this).val().length )
 			$( '#' + $(this).attr('rel') + ' .related_widgets' ).slideUp('fast');
@@ -60,6 +48,7 @@ jQuery(window).ready(function($) {
 	// Add sortables to widgets inside sidebars
 	$('.related-widgets-sidebar .related_widgets').sortable({
 		axis: 'y',
+		distance: 15,
 		placeholder: 'sortable-placeholder'
 	});
 });
