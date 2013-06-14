@@ -1,24 +1,19 @@
-.related-widgets-options .collapsed hgroup { border-bottom:none; }
-.related-widgets-sidebar { float:right; width:100%; clear:both; margin:0.3em 0; border:1px solid #ddd; border-radius:4px; background:#eee; }
-.related-widgets-config { padding:0 8px; }
+.related-widgets-sidebar { float:right; width:100%; clear:both; margin:0 0 0.5em 0; }
 .related-widgets-sidebar p { margin:0.5em 0; }
-.related-widgets-sidebar hgroup { clear:both; position:relative; padding:0 8px; margin:0; border-bottom:1px solid #ddd; }
-.related-widgets-sidebar h4 { display:inline-block; margin:0 1em 0; padding:0.5em 0 0.5em 5px; font-size:1.1em; }
+.related-widgets-sidebar hgroup { clear:both; position:relative; padding:0; margin:0; }
+.related-widgets-sidebar h4 { display:inline-block; margin:0; padding:0.5em 0 0.5em 0; font-size:1.1em; }
 .related-widgets-sidebar .add-widget { display:block; clear:both; margin:0; padding:8px 0 0 0; }
 .related-widgets-sidebar .add-widget select { margin:0; max-width:15em; }
-.related-widgets-sidebar .toggle, .related-widgets-sidebar h4 { cursor:pointer; }
-.related-widgets-sidebar .toggle { background:#ddd; position:absolute; float:left; width:20px; height:100%; left:0; top:0; bottom:0; border-right:1px solid #ddd; }
-.related-widgets-sidebar .toggle:hover { }
-.related-widgets-sidebar .toggle:after { content:''; display:block; position:absolute; width:0; height:0; top:50%; left:50%; margin:-7px 0 0 -5px; border:5px solid transparent; border-bottom-color:#999; }
-.related-widgets-options .collapsed .toggle { background:transparent; }
-.related-widgets-options .collapsed .toggle:after { border-color:transparent; border-top-color:#bbb; margin-top:-2px; }
-.related-widgets-enable { float:right; margin-left:8px; padding-top:0.6em; }  
-.related_widgets { margin:8px 0 0 0; padding:0; border:1px solid #ddd; border-radius:6px; background:#fff; }
-.related_widgets li { margin:0; padding:0.3em 8px; border-top:1px solid #ddd; cursor:move; }
+.related-widgets-enable { float:right; padding-top:0.6em; } 
+.related-widgets-config { float:left; width:100%; clear:both; border:1px solid #ddd; border-radius:3px; background:#eee; }
+.related_widgets { float:left; width:100%; clear:both; margin:0; padding:0; }
+.related_widgets li { float:left; width:100%; margin:0; padding:0.3em 0; border-top:1px solid #ddd; cursor:move; }
 .related_widgets li:first-child { border:none; }
+.related_widgets .widget-hide-checkbox { float:left; position:relative; left:-1.25em; margin:0.15em -1.25em -1em 0; }
 .related_widgets strong { font-weight:normal; }
-.related_widgets .widget-hide, .related_widgets .widget-show { float:right; margin-left:1em; }
-.related_widgets .do-hide { color:#999; }
+.related_widgets .widget-item label { display:block; padding-left:1.25em; }
+.related_widgets .widget-hide { float:right; margin:0 0.5em 0 0.5em; }
+.related_widgets .widget-title { display:block; margin-left:0.5em; }
 .related-widgets-sidebar .replace-widget-area { margin:8px 0; float:right; width:100%; clear:both; }
 .related-widgets-sidebar .replace-widget-area strong { display:block; margin-bottom:5px; }
 .related-widgets-sidebar .replace-widget-area select { margin:0.2em 0 0 0; padding:0; display:block; width:99%; }

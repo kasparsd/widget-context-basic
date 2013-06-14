@@ -3,7 +3,7 @@
 Plugin Name: Widget Context (Basic)
 Plugin URI: http://konstruktors.com
 Description: Show or hide widgets on specific sections of your site
-Version: 0.4.2
+Version: 0.4.3
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com
 Text Domain: wivi
@@ -77,16 +77,21 @@ class widget_context_basic {
 	}
 
 	function get_options_frontend() {
-		global $wp_query;
-		
 		if ( is_category() )
-			$this->options = get_option( sprintf( 'related_widgets_tax_category_%s', $wp_query->get_queried_object_id() ) );
+			$this->options = get_option( sprintf( 'related_widgets_tax_category_%s', get_queried_object_id() ) );
 		elseif ( is_tag() )
-			$this->options = get_option( sprintf( 'related_widgets_tax_post_tag_%s', $wp_query->get_queried_object_id() ) );
+			$this->options = get_option( sprintf( 'related_widgets_tax_post_tag_%s', get_queried_object_id() ) );
 		elseif ( is_tax() )
-			$this->options = get_option( sprintf( 'related_widgets_tax_%s_%s', $wp_query->get('taxonomy'), $wp_query->get_queried_object_id() ) );
-		else if ( isset( $wp_query->post ) )
-			$this->options = get_post_meta( $wp_query->post->ID, 'related_widgets', true );
+			$this->options = get_option( sprintf( 'related_widgets_tax_%s_%s', get_query_var('taxonomy'), get_queried_object_id() ) );
+		else if ( is_singular() )
+			$this->options = get_post_meta( get_queried_object_id(), 'related_widgets', true );
+
+		$this->options = wp_parse_args(
+				$this->options,
+				array(
+					'sidebars' => array()
+				)
+			);
 	}
 
 	function modify_sidebars_and_widgets( $sidebars_widgets ) {
@@ -96,8 +101,12 @@ class widget_context_basic {
 		// Reorder or hide widets inside widget areas
 		foreach ( $sidebars_widgets as $sidebar_id => $widgets )
 			if ( isset( $this->options['sidebars'][ $sidebar_id ]['enabled'] ) )
-				$sidebars_widgets[ $sidebar_id ] = array_diff( (array) $this->options['sidebars'][ $sidebar_id ]['widgets'], (array) $this->options['sidebars'][ $sidebar_id ]['hidden'] );
+				$sidebars_widgets[ $sidebar_id ] = array_diff( 
+						(array) $this->options['sidebars'][ $sidebar_id ]['widget_order'], 
+						(array) $this->options['sidebars'][ $sidebar_id ]['hidden'] 
+					);
 
+		/*
 		$replaced_sidebars = array();
 
 		// Replace widget areas
@@ -106,8 +115,9 @@ class widget_context_basic {
 				$replaced_sidebars[ $sidebar_id ] = $sidebars_widgets[ $this->options['sidebars'][ $sidebar_id ]['replace'] ];
 			else
 				$replaced_sidebars[ $sidebar_id ] = $widgets;
+		*/
 
-		return $replaced_sidebars;
+		return $sidebars_widgets;
 	}
 
 	function save_related_widgets( $post_id ) {
@@ -160,11 +170,6 @@ class widget_context_basic {
 			if ( ! isset( $sidebar['enable_related_widgets'] ) )
 				continue;
 
-			if ( ! empty( $this->options ) && isset( $this->options['sidebars'][ $sidebar_id ]['enabled'] ) )
-				$related_enabled = ' checked="checked" ';
-			else
-				$related_enabled = '';
-
 			if ( ! isset( $all_widgets[ $sidebar_id ] ) || empty( $all_widgets[ $sidebar_id ] ) )
 				continue;
 
@@ -175,7 +180,6 @@ class widget_context_basic {
 							<label class="related-widgets-enable">
 								<input type="checkbox" name="related_widgets[sidebars][%1$s][enabled]" value="1" %4$s rel="rs-sidebar-%1$s" /> %3$s
 							</label>
-							<span class="toggle" rel="rs-sidebar-%1$s"></span>
 						</hgroup>
 						<div class="related-widgets-config">
 							%5$s
@@ -184,13 +188,13 @@ class widget_context_basic {
 					$sidebar_id, 
 					$sidebar['name'],
 					__( 'Enable' ),
-					$related_enabled,
+					checked( $this->options['sidebars'][ $sidebar_id ]['enabled'], true, false ),
 					$this->show_related_widgets_for_sidebar( $sidebar_id, $post )
 				);
 		}
 
 		if ( empty( $sidebar_options ) ) {
-			$sidebar_options[] = sprintf( '<p>%s</p>', __('Please define which sidebars should be configurable. See plugin docs for more information.') );
+			$sidebar_options[] = sprintf( '<p>%s</p>', __( 'Please define which sidebars should be configurable. See plugin docs for more information.', 'wivi' ) );
 			return;
 		}
 
@@ -200,61 +204,72 @@ class widget_context_basic {
 					<p class="edit-widgets-link">%s</p>
 				</div>', 
 				implode( '', $sidebar_options ),
-				sprintf( '<a href="%s">%s</a>', admin_url( 'widgets.php' ), __('Manage Widgets') )
+				sprintf( '<a href="%s">%s</a>', admin_url( 'widgets.php' ), __( 'Manage Widgets', 'wivi' ) )
 			);
 	}
 
 	function show_related_widgets_for_sidebar( $sidebar_id, $post ) {
 		global $wp_registered_sidebars, $wp_registered_widgets;
 
-		$sidebar = $wp_registered_sidebars[ $sidebar_id ];
 		$all_widgets = wp_get_sidebars_widgets();
 
 		if ( empty( $all_widgets[ $sidebar_id ] ) )
-			return sprintf( '<p>%s</p>', __( 'No widgets available.' ) );
+			return sprintf( '<p>%s</p>', __( 'No widgets available.', 'wivi' ) );
 
 		/**
 		 * Set widget visiblity and order
 		 */
+		
+		$this->options['sidebars'][ $sidebar_id ] = wp_parse_args( 
+				$this->options['sidebars'][ $sidebar_id ],
+				array(
+					'enabled' => false,
+					'hidden' => array()
+				)
+			);
 
-		$widget_dropdown = array( sprintf( '<option value="">%s</option>', __( 'Choose Widget' ) ) );
+		$widget_dropdown = array( 
+				sprintf( 
+					'<option value="">%s</option>', 
+					__( 'Choose Widget', 'wivi' ) 
+				) 
+			);
+
 		$widget_list = array();
 
-		if ( ! empty( $this->options ) && isset( $this->options['sidebars'][ $sidebar_id ]['enabled'] ) )
-			$all_widgets[ $sidebar_id ] = array_intersect_key( $this->options['sidebars'][ $sidebar_id ]['widget_order'], $all_widgets[ $sidebar_id ] ) 
-											+ array_diff_key( $this->options['sidebars'][ $sidebar_id ]['widget_order'], $all_widgets[ $sidebar_id ] );
+		// Order widgets in a custom order, if enabled
+		if ( $this->options['sidebars'][ $sidebar_id ]['enabled'] )
+			$all_widgets[ $sidebar_id ] = array_intersect( 
+					$this->options['sidebars'][ $sidebar_id ]['widget_order'], 
+					$all_widgets[ $sidebar_id ] 
+				) + array_diff( 
+					$this->options['sidebars'][ $sidebar_id ]['widget_order'], 
+					$all_widgets[ $sidebar_id ] 
+				);
 
 		foreach ( $all_widgets[ $sidebar_id ] as $widget_id ) {
-			$widget_dropdown[] = sprintf( '<option value="%s">%s</option>', $widget_id, $widget_id );
-
-			$is_hidden = false;
-
-			if ( ! empty( $this->options ) && isset( $this->options['sidebars'][ $sidebar_id ]['hidden'] ) && isset( $this->options['sidebars'][ $sidebar_id ]['enabled'] ) )
-				if ( in_array( $widget_id, $this->options['sidebars'][ $sidebar_id ]['hidden'] ) )
-					$is_hidden = true;
+			$widget_dropdown[] = sprintf( 
+					'<option value="%s">%s</option>', 
+					$widget_id, 
+					$widget_id 
+			);
 
 			$widget_list[] = sprintf( 
-					'<li class="widget-%1$s">
+					'<li class="widget-%1$s widget-item">
+						<input type="hidden" name="related_widgets[sidebars][%2$s][widget_order][]" value="%1$s" />
+						<label class="widget-hide">
+							<input type="checkbox" class="widget-hide-checkbox" name="related_widgets[sidebars][%2$s][hidden][]" value="%1$s" %4$s />
+							%5$s
+						</label>
 						<span class="widget-title">
 							<strong>%3$s</strong>
 							<span class="in-title"></span>
-						</span>
-						<input type="hidden" name="related_widgets[sidebars][%2$s][widget_order][]" value="%1$s" />
-						<label class="widget-show">
-							<input type="radio" name="related_widgets[sidebars][%2$s][widgets][%1$s][hidden]" value="" %4$s /> 
-							%5$s
-						</label>
-						<label class="widget-hide">
-							<input type="radio" name="related_widgets[sidebars][%2$s][widgets][%1$s][hidden]" value="1" %6$s /> 
-							%7$s
-						</label>								
+						</span>							
 					</li>',
 					$widget_id,
 					$sidebar_id,
-					esc_html( $wp_registered_widgets[ $widget_id ]['name'] ), 
-					checked( $is_hidden, false, false ),
-					__( 'Show' ),
-					checked( $is_hidden, true, false ),
+					esc_html( $wp_registered_widgets[ $widget_id ]['name'] ),
+					checked( in_array( $widget_id, $this->options['sidebars'][ $sidebar_id ]['hidden'] ), true, false ),
 					__( 'Hide' )
 				);
 		}
@@ -288,17 +303,17 @@ class widget_context_basic {
 					<ul class="related_widgets">
 						%s
 					</ul>
-					<p class="replace-widget-area">
+					<!-- <p class="replace-widget-area">
 						<label>
 							<strong>%s</strong> 
 							<select name="related_widgets[sidebars][%s][replace]" rel="rs-sidebar-%5$s">%s</select>
 						</label>
-					</p>
+					</p> -->
 					',
 					implode( '', $widget_dropdown ),
 					__( 'Add' ),
 					implode( '', $widget_list ),
-					__( 'Replace widget area with:' ),
+					__( 'Replace widget area with:', 'wivi' ),
 					$sidebar_id,
 					implode( '', $sidebar_dropdowns )
 				);
