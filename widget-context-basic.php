@@ -3,7 +3,7 @@
 Plugin Name: Widget Context (Basic)
 Plugin URI: http://konstruktors.com
 Description: Show or hide widgets on specific sections of your site
-Version: 0.4.3
+Version: 0.4.4
 Author: Kaspars Dambis
 Author URI: http://konstruktors.com
 Text Domain: wivi
@@ -159,9 +159,9 @@ class widget_context_basic {
 		
 		// We are on post edit screen
 		if ( is_object( $post ) )
-			$this->options = get_post_meta( $post->ID, 'related_widgets', true );
+			$this->options = (array) get_post_meta( $post->ID, 'related_widgets', true );
 		else
-			$this->options = get_option( $post );
+			$this->options = (array) get_option( $post );
 
 		$sidebar_options = array();
 		$all_widgets = wp_get_sidebars_widgets();
